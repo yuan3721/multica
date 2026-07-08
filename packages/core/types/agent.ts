@@ -101,6 +101,7 @@ export const RUNTIME_PROFILE_PROTOCOL_FAMILIES = [
   "codebuddy",
   "codex",
   "copilot",
+  "dimcli",
   "opencode",
   "openclaw",
   "hermes",

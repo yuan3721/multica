@@ -118,6 +118,7 @@ var (
 		"codex":         "codex",
 		"copilot":       "copilot",
 		"cursor":        "cursor",
+		"dimcli":        "dimcli",
 		"gemini":        "gemini",
 		"hermes":        "hermes",
 		"kiro":          "kiro",
