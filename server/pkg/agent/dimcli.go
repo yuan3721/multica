@@ -2,7 +2,9 @@ package agent
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os/exec"
@@ -15,13 +17,12 @@ import (
 // dimcliBlockedArgs are flags hardcoded by the daemon that must not be
 // overridden by user-configured custom_args. `acp` is the protocol
 // subcommand that drives the ACP JSON-RPC transport; overriding it
-// would break the daemon↔dim communication contract.
-//
-// dim has its own approval modes (--approvals auto|normal|strict) and
-// auth flows that the daemon does not manage, so we do NOT inject
-// any bypass/permission flags here — dim controls its own security model.
+// would break the daemon↔dim communication contract. `--approvals` is
+// also blocked so the daemon's auto-approval injection below cannot be
+// overridden by user custom_args.
 var dimcliBlockedArgs = map[string]blockedArgMode{
-	"acp": blockedStandalone,
+	"acp":         blockedStandalone,
+	"--approvals": blockedWithValue,
 }
 
 // dimcliBackend implements Backend by spawning `dim acp` and communicating
@@ -56,6 +57,31 @@ type dimcliMessageStream struct {
 
 func newDimcliMessageStream(size int) *dimcliMessageStream {
 	return &dimcliMessageStream{ch: make(chan Message, size)}
+}
+
+func formatResult(v any) string {
+
+	switch r := v.(type) {
+	case []byte:
+		var out bytes.Buffer
+		if err := json.Indent(&out, r, "", "  "); err == nil {
+			return out.String()
+		}
+		return string(r)
+	case json.RawMessage:
+		var out bytes.Buffer
+		if err := json.Indent(&out, r, "", "  "); err == nil {
+			return out.String()
+		}
+		return string(r)
+	default:
+		b, err := json.MarshalIndent(v, "", "  ")
+		if err != nil {
+			return fmt.Sprintf("%+v", v)
+		}
+		return string(b)
+	}
+
 }
 
 func (s *dimcliMessageStream) send(msg Message) {
@@ -98,8 +124,11 @@ func (b *dimcliBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 	timeout := opts.Timeout
 	runCtx, cancel := runContext(ctx, timeout)
 
+	// Inject --approvals auto so dim auto-approves all tool calls (exec, file
+	// edits, etc.) without user interaction. This matches the yolo-mode
+	// semantics of the other ACP backends (Hermes/Traecli/Qoder/Cursor).
 	dimcliArgs := append(
-		[]string{"acp"},
+		[]string{"acp", "--approvals", "auto"},
 		filterCustomArgs(opts.CustomArgs, dimcliBlockedArgs, b.cfg.Logger)...,
 	)
 	cmd := exec.CommandContext(runCtx, execPath, dimcliArgs...)
@@ -292,7 +321,7 @@ func (b *dimcliBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 		}
 
 		c.sessionID = sessionID
-		b.cfg.Logger.Info("dimcli session created", "session_id", sessionID)
+		b.cfg.Logger.Info("dimcli session created===145==local", "session_id", sessionID)
 
 		// Attempt to set model if specified. dim may not support set_model,
 		// so we log and continue rather than fail on error (mirrors traecli
@@ -307,6 +336,37 @@ func (b *dimcliBackend) Execute(ctx context.Context, prompt string, opts ExecOpt
 				b.cfg.Logger.Info("dimcli session model set", "model", opts.Model)
 			}
 		}
+
+		// Request full-access permission for the session. This allows dim to
+		// perform file operations, shell commands, etc. without prompting the
+		// user for approval. dim may not support this, so we log and continue.
+result, err := c.request(runCtx, "session/set_config_option", map[string]any{
+
+	"sessionId": sessionID,
+	"configId":  "permission",
+	"value":     "full-access",
+
+})
+
+if err != nil {
+
+	b.cfg.Logger.Warn(
+		"dimcli set_config_option permission failed (continuing)",
+		"error", err,
+	)
+	return
+
+}
+
+resultStr := formatResult(result)
+
+b.cfg.Logger.Info(
+
+	"dimcli session permission set to full-access",
+	"session_id", sessionID,
+	"result", resultStr,
+
+)
 
 		userText := prompt
 		if opts.SystemPrompt != "" {
