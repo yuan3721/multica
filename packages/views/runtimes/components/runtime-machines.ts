@@ -77,6 +77,20 @@ export function splitRuntimeName(name: string): {
   return { base: m[1], hostname: m[2] };
 }
 
+// The label for a runtime rendered under (or next to) its machine's name.
+// A machine-level rename stamps the same custom_name on every runtime of
+// the daemon (MUL-4217), so repeating it per runtime is noise — fall back
+// to the provider base (e.g. "Claude"). A one-off per-runtime rename that
+// differs from the machine name stays visible verbatim.
+export function runtimeRowLabel(
+  runtime: AgentRuntime,
+  machineTitle: string,
+): string {
+  const custom = runtime.custom_name?.trim();
+  if (custom && custom !== machineTitle) return custom;
+  return splitRuntimeName(runtime.name).base;
+}
+
 export function buildRuntimeMachines(
   runtimes: AgentRuntime[],
   options: RuntimeMachineOptions,
@@ -151,6 +165,7 @@ export function filterRuntimeMachines(
       machine.daemonId,
       machine.providerNames.join(" "),
       machine.runtimes.map((runtime) => runtime.name).join(" "),
+      machine.runtimes.map((runtime) => runtime.custom_name ?? "").join(" "),
     ]
       .filter(Boolean)
       .join(" ")
@@ -268,10 +283,28 @@ function runtimeDeviceName(runtime: AgentRuntime): string | null {
   return raw.split(" · ")[0]?.trim() || null;
 }
 
+// The custom name shared by every runtime on a machine (MUL-4217). A
+// machine-level rename writes the same custom_name to all runtimes on the
+// daemon, so a name shared by all of them is the machine's label. A one-off
+// per-runtime rename (not shared) is deliberately ignored here so it can't
+// masquerade as the whole machine's name.
+export function sharedCustomName(runtimes: AgentRuntime[]): string | null {
+  if (runtimes.length === 0) return null;
+  const names = runtimes.map((r) => r.custom_name?.trim() ?? "");
+  const first = names[0];
+  if (!first) return null;
+  return names.every((n) => n === first) ? first : null;
+}
+
 function machineTitle(
   runtimes: AgentRuntime[],
   options: { isCurrent: boolean; localMachineName?: string | null },
 ): string {
+  // An explicit user-set machine name wins over everything, including the
+  // OS-reported local machine name.
+  const shared = sharedCustomName(runtimes);
+  if (shared) return shared;
+
   if (options.isCurrent && options.localMachineName) {
     return options.localMachineName;
   }

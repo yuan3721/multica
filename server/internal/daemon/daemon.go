@@ -757,6 +757,16 @@ func (d *Daemon) Run(ctx context.Context) error {
 		"launched_by", d.cfg.LaunchedBy,
 	)
 
+	// Mark the daemon-owned workspaces tree before any task runs. A sandbox
+	// fault can strip every MULTICA_* env var from an agent subprocess; the
+	// per-workdir marker then only protects cwds inside the workdir, and a
+	// subprocess that escaped to the workdir's parent would fall back to the
+	// user's config PAT. The root marker makes the CLI fail closed anywhere
+	// under the tree. Non-fatal: Prepare re-ensures it per task.
+	if err := execenv.EnsureWorkspacesRootMarker(d.cfg.WorkspacesRoot); err != nil {
+		d.logger.Warn("workspaces root marker not written; CLI fail-closed guard limited to task workdirs", "error", err)
+	}
+
 	// Load auth token from CLI config.
 	if err := d.resolveAuth(); err != nil {
 		return err
@@ -1563,10 +1573,10 @@ func (d *Daemon) ensureRepoReady(ctx context.Context, workspaceID, repoURL strin
 	//
 	//   - cacheHitOnEntry=true: the repo is already cloned; we still must
 	//     refresh `workspaceState.settings` because the /repo/checkout
-	//     handler reads workspaceCoAuthoredByEnabled right after this and
-	//     the 30s workspaceSyncLoop tick is too slow for a freshly-flipped
-	//     GitHub master switch / `co_authored_by_enabled` toggle to feel
-	//     live (RFC MUL-2414 §4.8; PR #2847 review by Emacs).
+	//     handler reads workspaceCoAuthoredByEnabled right after this. The
+	//     periodic workspace sync deliberately does not refresh repos or
+	//     settings, so this is the point at which a freshly-flipped GitHub
+	//     master switch / `co_authored_by_enabled` toggle becomes live.
 	//
 	//   - cacheHitOnEntry=false but cache hit *after* we acquire the mutex:
 	//     a sibling goroutine on a concurrent cold-miss already refreshed
@@ -1692,8 +1702,10 @@ func (d *Daemon) tryRenewToken(ctx context.Context) {
 
 // workspaceSyncLoop periodically fetches the user's workspaces from the API
 // and registers runtimes for any new ones. A WS connect/reconnect broadcast
-// triggers an immediate sync so runtime/repo changes the server applied during
-// the WS gap are picked up sub-second instead of after the next 30s tick.
+// triggers an immediate sync so workspace and runtime changes the server
+// applied during the WS gap are picked up sub-second instead of after the
+// next 30s tick. Repository bindings and workspace settings refresh on demand
+// when a checkout needs them.
 func (d *Daemon) workspaceSyncLoop(ctx context.Context) {
 	ticker := time.NewTicker(DefaultWorkspaceSyncInterval)
 	defer ticker.Stop()
@@ -1756,14 +1768,6 @@ func (d *Daemon) syncWorkspacesFromAPI(ctx context.Context) error {
 	var removed int
 	for id, name := range apiIDs {
 		if currentIDs[id] {
-			// Already tracked: refresh the cached workspace settings so
-			// feature toggles flipped in the web UI take effect on the next
-			// gated operation without a daemon restart (see RFC MUL-2414 §4.8;
-			// reviewed in PR #2847). refreshWorkspaceRepos covers settings +
-			// repos in a single round trip.
-			if _, err := d.refreshWorkspaceRepos(ctx, id); err != nil {
-				d.logger.Debug("workspace sync: refresh settings failed", "workspace_id", id, "error", err)
-			}
 			// Pick up custom runtime profiles created/edited/disabled via
 			// the web UI or CLI between sync ticks (MUL-3332). Without this,
 			// a profile added on the server would only become a runtime row
@@ -2003,7 +2007,6 @@ func (d *Daemon) handleHeartbeatActions(ctx context.Context, runtimeID string, r
 	if resp == nil {
 		return
 	}
-	execenv.ApplyFeatureFlagSnapshot(resp.FeatureFlags)
 	if resp.PendingUpdate != nil || resp.PendingModelList != nil || resp.PendingLocalSkills != nil || resp.PendingLocalSkillImport != nil {
 		d.logger.Debug("heartbeat: pending actions",
 			"runtime_id", runtimeID,
@@ -2129,11 +2132,19 @@ func (d *Daemon) handleLocalSkillList(ctx context.Context, rt Runtime, requestID
 		})
 		return
 	}
+	mcpServers, mcpSupported, err := listRuntimeLocalMcpServers(rt.Provider)
+	if err != nil {
+		d.logger.Warn("runtime local MCP discovery failed", "runtime_id", rt.ID, "provider", rt.Provider, "error", err)
+		mcpServers = []runtimeLocalMcpServerSummary{}
+		mcpSupported = false
+	}
 
 	d.reportLocalSkillListResult(ctx, rt, requestID, map[string]any{
-		"status":    "completed",
-		"skills":    skills,
-		"supported": supported,
+		"status":        "completed",
+		"skills":        skills,
+		"supported":     supported,
+		"mcp_servers":   mcpServers,
+		"mcp_supported": mcpSupported,
 	})
 }
 
@@ -3515,6 +3526,7 @@ func (d *Daemon) runTask(ctx context.Context, task Task, provider string, slot i
 		IssueID:                          task.IssueID,
 		TriggerCommentID:                 task.TriggerCommentID,
 		TriggerThreadID:                  task.TriggerThreadID,
+		CommentReplyTargets:              commentReplyThreads(task),
 		NewCommentCount:                  task.NewCommentCount,
 		NewCommentsSince:                 task.NewCommentsSince,
 		PriorSessionResumed:              task.PriorSessionID != "",
@@ -3580,8 +3592,22 @@ func (d *Daemon) runTask(ctx context.Context, task Task, provider string, slot i
 	// Squad-leader tasks also skip reuse so a pre-fix leader session recorded
 	// against the user's local_directory cannot be re-entered without a lock.
 	var agentMcpConfig json.RawMessage
+	var effectiveMcpConfig json.RawMessage
+	var cursorMcpAuthSource string
 	if task.Agent != nil {
 		agentMcpConfig = task.Agent.McpConfig
+		effectiveMcpConfig = agentMcpConfig
+		if merged, mergeErr := mergeRuntimeAndAgentMcpConfig(provider, agentMcpConfig); mergeErr != nil {
+			taskLog.Warn("mcp_config: runtime merge failed; using agent configuration only",
+				"provider", provider,
+				"error", mergeErr,
+			)
+		} else {
+			effectiveMcpConfig = merged
+		}
+		if provider == "cursor" {
+			cursorMcpAuthSource = strings.TrimSpace(task.Agent.CustomEnv[execenv.CursorMcpAuthSourceEnv])
+		}
 	}
 	// Decode openclaw-specific runtime_config knobs once so reuse / prepare /
 	// ExecOptions all see the same mode + gateway pin (issue #3260). Parse
@@ -3594,28 +3620,31 @@ func (d *Daemon) runTask(ctx context.Context, task Task, provider string, slot i
 	}
 	if task.PriorWorkDir != "" && localAssignment == nil && !task.IsLeaderTask {
 		env = execenv.Reuse(execenv.ReuseParams{
-			WorkDir:         task.PriorWorkDir,
-			Provider:        provider,
-			CodexVersion:    codexVersion,
-			OpenclawBin:     openclawBin,
-			McpConfig:       agentMcpConfig,
-			OpenclawGateway: openclawGateway,
-			Task:            taskCtx,
+			WorkspacesRoot:      d.cfg.WorkspacesRoot,
+			WorkDir:             task.PriorWorkDir,
+			Provider:            provider,
+			CodexVersion:        codexVersion,
+			OpenclawBin:         openclawBin,
+			McpConfig:           effectiveMcpConfig,
+			CursorMcpAuthSource: cursorMcpAuthSource,
+			OpenclawGateway:     openclawGateway,
+			Task:                taskCtx,
 		}, d.logger)
 	}
 	if env == nil {
 		var err error
 		prepParams := execenv.PrepareParams{
-			WorkspacesRoot:  d.cfg.WorkspacesRoot,
-			WorkspaceID:     task.WorkspaceID,
-			TaskID:          task.ID,
-			AgentName:       agentName,
-			Provider:        provider,
-			CodexVersion:    codexVersion,
-			OpenclawBin:     openclawBin,
-			McpConfig:       agentMcpConfig,
-			OpenclawGateway: openclawGateway,
-			Task:            taskCtx,
+			WorkspacesRoot:      d.cfg.WorkspacesRoot,
+			WorkspaceID:         task.WorkspaceID,
+			TaskID:              task.ID,
+			AgentName:           agentName,
+			Provider:            provider,
+			CodexVersion:        codexVersion,
+			OpenclawBin:         openclawBin,
+			McpConfig:           effectiveMcpConfig,
+			CursorMcpAuthSource: cursorMcpAuthSource,
+			OpenclawGateway:     openclawGateway,
+			Task:                taskCtx,
 		}
 		if localAssignment != nil {
 			prepParams.LocalWorkDir = localAssignment.AbsPath
@@ -3631,10 +3660,15 @@ func (d *Daemon) runTask(ctx context.Context, task Task, provider string, slot i
 		d.markActiveEnvRoot(env.RootDir)
 		defer d.unmarkActiveEnvRoot(env.RootDir)
 	}
-	taskTempDir, err := ensureTaskTempDir(env.RootDir, task.ID)
+	taskTempDir, err := ensureTaskTempDir(env.RootDir, task.WorkspaceID, task.ID)
 	if err != nil {
 		return TaskResult{}, fmt.Errorf("prepare task temp dir: %w", err)
 	}
+	defer func() {
+		if cerr := os.RemoveAll(taskTempDir); cerr != nil {
+			taskLog.Warn("task temp dir cleanup failed", "path", taskTempDir, "error", cerr)
+		}
+	}()
 
 	// Issue #3999 race A: now that env.WorkDir is on disk, transition the
 	// server-side state machine dispatched (or waiting_local_directory) →
@@ -3819,7 +3853,7 @@ func (d *Daemon) runTask(ctx context.Context, task Task, provider string, slot i
 	var mcpConfig json.RawMessage
 	if task.Agent != nil {
 		customArgs = task.Agent.CustomArgs
-		mcpConfig = task.Agent.McpConfig
+		mcpConfig = effectiveMcpConfig
 	}
 	// Two-tier model resolution: an explicit agent.model wins,
 	// then the daemon-wide MULTICA_<PROVIDER>_MODEL env var. If
@@ -3846,11 +3880,12 @@ func (d *Daemon) runTask(ctx context.Context, task Task, provider string, slot i
 	// model, Codex's per-model `supported_reasoning_levels`) only resolve
 	// here, against the daemon's local CLI catalog. Invalid combinations
 	// log a warning and drop the level rather than failing the task, so a
-	// stale persisted value never blocks execution. Empty model is passed
-	// through unchanged — ValidateThinkingLevel resolves it to the
-	// provider's default model internally so default-model tasks aren't
-	// misjudged. Discovery errors fail open: if we can't list models, we
-	// keep the persisted level and let the CLI surface any objection.
+	// stale persisted value never blocks execution. An empty model is
+	// resolved by ValidateThinkingLevel to the provider's default model so
+	// default-model tasks aren't misjudged — except for codex, whose empty
+	// model follows config.toml (any model) and so fails closed, dropping the
+	// level here. Discovery errors fail open for resolved models: if we can't
+	// list models, we keep the persisted level and let the CLI object.
 	if thinkingLevel != "" {
 		ok, err := agent.ValidateThinkingLevel(ctx, provider, entry.Path, model, thinkingLevel)
 		if err != nil {
@@ -3875,6 +3910,7 @@ func (d *Daemon) runTask(ctx context.Context, task Task, provider string, slot i
 		ThreadName:                deriveTaskThreadName(task),
 		Timeout:                   d.cfg.AgentTimeout,
 		SemanticInactivityTimeout: d.cfg.CodexSemanticInactivityTimeout,
+		HandshakeTimeout:          d.cfg.CodexHandshakeTimeout,
 		ResumeSessionID:           task.PriorSessionID,
 		ExtraArgs:                 extraArgs,
 		CustomArgs:                customArgs,
@@ -3919,7 +3955,10 @@ func (d *Daemon) runTask(ctx context.Context, task Task, provider string, slot i
 		"timeout", execOpts.Timeout,
 	)
 
-	result, tools, err := d.executeAndDrain(ctx, backend, prompt, execOpts, taskLog, task.ID)
+	// Shared across the resume-retry below so the retry's transcript rows
+	// keep ascending seq values for the same task.
+	var msgSeq atomic.Int32
+	result, tools, err := d.executeAndDrain(ctx, backend, prompt, execOpts, taskLog, task.ID, &msgSeq)
 	if err != nil {
 		return TaskResult{}, err
 	}
@@ -3931,7 +3970,7 @@ func (d *Daemon) runTask(ctx context.Context, task Task, provider string, slot i
 		firstUsage := result.Usage
 		taskLog.Warn("session resume failed, retrying with fresh session", "error", result.Error)
 		execOpts.ResumeSessionID = ""
-		retryResult, retryTools, retryErr := d.executeAndDrain(ctx, backend, prompt, execOpts, taskLog, task.ID)
+		retryResult, retryTools, retryErr := d.executeAndDrain(ctx, backend, prompt, execOpts, taskLog, task.ID, &msgSeq)
 		if retryErr != nil {
 			taskLog.Error("fresh session also failed to start", "error", retryErr)
 		} else {
@@ -4123,8 +4162,11 @@ func (d *Daemon) runTask(ctx context.Context, task Task, provider string, slot i
 }
 
 // executeAndDrain runs a backend, drains its message stream (forwarding to the
-// server), and waits for the final result.
-func (d *Daemon) executeAndDrain(ctx context.Context, backend agent.Backend, prompt string, opts agent.ExecOptions, taskLog *slog.Logger, taskID string) (agent.Result, int32, error) {
+// server), and waits for the final result. msgSeq numbers the reported task
+// messages and is owned by the caller so a same-task retry continues the
+// sequence instead of restarting at 1 — the server orders the transcript by
+// seq alone, and duplicate seqs would interleave the two attempts' rows.
+func (d *Daemon) executeAndDrain(ctx context.Context, backend agent.Backend, prompt string, opts agent.ExecOptions, taskLog *slog.Logger, taskID string, msgSeq *atomic.Int32) (agent.Result, int32, error) {
 	// Wrap the caller's ctx so the idle watchdog (below) can interrupt both
 	// the agent subprocess (via the ctx passed to backend.Execute) AND the
 	// drain loop with a single cancel. Without this layer the backend would
@@ -4183,8 +4225,12 @@ func (d *Daemon) executeAndDrain(ctx context.Context, backend agent.Backend, pro
 		go d.runIdleWatchdog(agentCtx, idleWindow, d.cfg.AgentToolWatchdog, &lastActivityAt, &inFlightTools, &idleWatchdogFired, &idleWatchdogThreshold, agentCancel, session.Messages, taskLog, taskID)
 	}
 
+	// drainFinished closes after the drain goroutine has flushed the last
+	// message batch, so the result hand-off below can wait for the transcript
+	// tail to be persisted.
+	drainFinished := make(chan struct{})
 	go func() {
-		var seq atomic.Int32
+		defer close(drainFinished)
 		var mu sync.Mutex
 		var pendingText strings.Builder
 		var pendingThinking strings.Builder
@@ -4194,7 +4240,7 @@ func (d *Daemon) executeAndDrain(ctx context.Context, backend agent.Backend, pro
 		flush := func() {
 			mu.Lock()
 			if pendingThinking.Len() > 0 {
-				s := seq.Add(1)
+				s := msgSeq.Add(1)
 				batch = append(batch, TaskMessageData{
 					Seq:     int(s),
 					Type:    "thinking",
@@ -4203,7 +4249,7 @@ func (d *Daemon) executeAndDrain(ctx context.Context, backend agent.Backend, pro
 				pendingThinking.Reset()
 			}
 			if pendingText.Len() > 0 {
-				s := seq.Add(1)
+				s := msgSeq.Add(1)
 				batch = append(batch, TaskMessageData{
 					Seq:     int(s),
 					Type:    "text",
@@ -4230,7 +4276,9 @@ func (d *Daemon) executeAndDrain(ctx context.Context, backend agent.Backend, pro
 		defer ticker.Stop()
 
 		done := make(chan struct{})
+		tickerDone := make(chan struct{})
 		go func() {
+			defer close(tickerDone)
 			for {
 				select {
 				case <-ticker.C:
@@ -4280,7 +4328,7 @@ func (d *Daemon) executeAndDrain(ctx context.Context, backend agent.Backend, pro
 						callIDToTool[msg.CallID] = msg.Tool
 						mu.Unlock()
 					}
-					s := seq.Add(1)
+					s := msgSeq.Add(1)
 					mu.Lock()
 					batch = append(batch, TaskMessageData{
 						Seq:   int(s),
@@ -4304,7 +4352,7 @@ func (d *Daemon) executeAndDrain(ctx context.Context, backend agent.Backend, pro
 							break
 						}
 					}
-					s := seq.Add(1)
+					s := msgSeq.Add(1)
 					output := msg.Output
 					if len(output) > 8192 {
 						output = output[:8192]
@@ -4339,7 +4387,7 @@ func (d *Daemon) executeAndDrain(ctx context.Context, backend agent.Backend, pro
 					}
 				case agent.MessageError:
 					taskLog.Error("agent error", "content", msg.Content)
-					s := seq.Add(1)
+					s := msgSeq.Add(1)
 					mu.Lock()
 					batch = append(batch, TaskMessageData{
 						Seq:     int(s),
@@ -4354,11 +4402,39 @@ func (d *Daemon) executeAndDrain(ctx context.Context, backend agent.Backend, pro
 		}
 	drainDone:
 		close(done)
+		// Let any tick-driven flush finish before the final one: a flush still
+		// in flight would otherwise keep posting batches after this goroutine
+		// signalled that the transcript tail was persisted.
+		<-tickerDone
 		flush()
 	}()
 
+	// waitForDrain blocks until the drain goroutine has flushed the transcript
+	// tail, so every terminal return below hands control back only after the
+	// task's reported messages are persisted — a consumer reading them at the
+	// terminal transition would otherwise see a transcript that is non-empty
+	// but truncated, indistinguishable from a complete one. Bounded so a
+	// backend that never closes its message channel cannot stall the terminal
+	// transition: after 10s the drain loop is cancelled and given a window
+	// wide enough for its worst-case exit — an in-flight tick flush plus the
+	// final one, each capped by the 5s ReportTaskMessages timeout and neither
+	// interruptible by the cancel (they post on context.Background()).
+	waitForDrain := func() {
+		select {
+		case <-drainFinished:
+		case <-time.After(10 * time.Second):
+			drainCancel()
+			select {
+			case <-drainFinished:
+			case <-time.After(12 * time.Second):
+				taskLog.Warn("transcript drain did not stop after cancel; completing anyway")
+			}
+		}
+	}
+
 	select {
 	case result := <-session.Result:
+		waitForDrain()
 		if idleWatchdogFired.Load() {
 			// The backend's wait goroutine (e.g. claude.go) translates the
 			// SIGKILL we delivered via agentCancel into Status="aborted".
@@ -4372,6 +4448,11 @@ func (d *Daemon) executeAndDrain(ctx context.Context, backend agent.Backend, pro
 		}
 		return result, toolCount.Load(), nil
 	case <-drainCtx.Done():
+		// The drain loop is exiting on this same Done signal; wait for its
+		// final flush so the timeout/watchdog/cancel terminals below cannot
+		// hand back (and let runTask fail-and-broadcast) a still-flushing
+		// transcript either.
+		waitForDrain()
 		// Idle watchdog cancels via agentCancel(), which propagates here as
 		// context.Canceled. Check this BEFORE the generic cancelled/timeout
 		// classifiers so a watchdog-induced stop isn't misreported as
@@ -4645,13 +4726,21 @@ func composeOpenclawIncludeRoots(addRoot, userValue string) (string, bool) {
 	return strings.Join(parts, string(os.PathListSeparator)), true
 }
 
-func ensureTaskTempDir(envRoot string, taskID string) (string, error) {
+func ensureTaskTempDir(envRoot string, workspaceID string, taskID string) (string, error) {
 	envRoot = strings.TrimSpace(envRoot)
 	if envRoot == "" {
 		return "", errors.New("env root is empty")
 	}
-	dir := filepath.Join(envRoot, "tmp", safeTempPathComponent(taskID))
-	if err := os.MkdirAll(dir, 0o700); err != nil {
+	workspaceID = strings.TrimSpace(workspaceID)
+	if workspaceID == "" {
+		return "", errors.New("workspace id is empty")
+	}
+	taskID = strings.TrimSpace(taskID)
+	if taskID == "" {
+		return "", errors.New("task id is empty")
+	}
+	dir, err := os.MkdirTemp(socketSafeTempBaseDir(), "multica-task-")
+	if err != nil {
 		return "", err
 	}
 	if err := os.Chmod(dir, 0o700); err != nil {
@@ -4660,13 +4749,13 @@ func ensureTaskTempDir(envRoot string, taskID string) (string, error) {
 	return dir, nil
 }
 
-func safeTempPathComponent(value string) string {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return "task"
+func socketSafeTempBaseDir() string {
+	if os.PathSeparator == '/' {
+		if info, err := os.Stat("/tmp"); err == nil && info.IsDir() {
+			return "/tmp"
+		}
 	}
-	replacer := strings.NewReplacer("/", "_", "\\", "_", ":", "_")
-	return replacer.Replace(value)
+	return os.TempDir()
 }
 
 // isBlockedEnvKey returns true if the key must not be overridden by user-
@@ -4678,7 +4767,7 @@ func isBlockedEnvKey(key string) bool {
 		return true
 	}
 	switch upper {
-	case "HOME", "PATH", "USER", "SHELL", "TERM", "TMPDIR", "TMP", "TEMP", "CODEX_HOME", "CURSOR_DATA_DIR", "OPENCLAW_CONFIG_PATH", "OPENCLAW_INCLUDE_ROOTS":
+	case "HOME", "PATH", "USER", "SHELL", "TERM", "TMPDIR", "TMP", "TEMP", "CODEX_HOME", "CURSOR_DATA_DIR", execenv.CursorMcpAuthSourceEnv, "OPENCLAW_CONFIG_PATH", "OPENCLAW_INCLUDE_ROOTS":
 		return true
 	}
 	return false
