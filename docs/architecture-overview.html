@@ -1,0 +1,564 @@
+<!DOCTYPE html><html><head>
+      <title>architecture-overview</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      
+      <link rel="stylesheet" href="file:////Users/yuanjw/.vscode/extensions/shd101wyy.markdown-preview-enhanced-0.8.30/crossnote/dependencies/katex/katex.min.css">
+      
+      
+      
+      <script type="text/javascript" src="file:////Users/yuanjw/.vscode/extensions/shd101wyy.markdown-preview-enhanced-0.8.30/crossnote/dependencies/mermaid/mermaid.min.js" charset="UTF-8"></script>
+      
+      
+      
+      <style>
+      code[class*=language-],pre[class*=language-]{color:#333;background:0 0;font-family:Consolas,"Liberation Mono",Menlo,Courier,monospace;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.4;-moz-tab-size:8;-o-tab-size:8;tab-size:8;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none}pre[class*=language-]{padding:.8em;overflow:auto;border-radius:3px;background:#f5f5f5}:not(pre)>code[class*=language-]{padding:.1em;border-radius:.3em;white-space:normal;background:#f5f5f5}.token.blockquote,.token.comment{color:#969896}.token.cdata{color:#183691}.token.doctype,.token.macro.property,.token.punctuation,.token.variable{color:#333}.token.builtin,.token.important,.token.keyword,.token.operator,.token.rule{color:#a71d5d}.token.attr-value,.token.regex,.token.string,.token.url{color:#183691}.token.atrule,.token.boolean,.token.code,.token.command,.token.constant,.token.entity,.token.number,.token.property,.token.symbol{color:#0086b3}.token.prolog,.token.selector,.token.tag{color:#63a35c}.token.attr-name,.token.class,.token.class-name,.token.function,.token.id,.token.namespace,.token.pseudo-class,.token.pseudo-element,.token.url-reference .token.variable{color:#795da3}.token.entity{cursor:help}.token.title,.token.title .token.punctuation{font-weight:700;color:#1d3e81}.token.list{color:#ed6a43}.token.inserted{background-color:#eaffea;color:#55a532}.token.deleted{background-color:#ffecec;color:#bd2c00}.token.bold{font-weight:700}.token.italic{font-style:italic}.language-json .token.property{color:#183691}.language-markup .token.tag .token.punctuation{color:#333}.language-css .token.function,code.language-css{color:#0086b3}.language-yaml .token.atrule{color:#63a35c}code.language-yaml{color:#183691}.language-ruby .token.function{color:#333}.language-markdown .token.url{color:#795da3}.language-makefile .token.symbol{color:#795da3}.language-makefile .token.variable{color:#183691}.language-makefile .token.builtin{color:#0086b3}.language-bash .token.keyword{color:#0086b3}pre[data-line]{position:relative;padding:1em 0 1em 3em}pre[data-line] .line-highlight-wrapper{position:absolute;top:0;left:0;background-color:transparent;display:block;width:100%}pre[data-line] .line-highlight{position:absolute;left:0;right:0;padding:inherit 0;margin-top:1em;background:hsla(24,20%,50%,.08);background:linear-gradient(to right,hsla(24,20%,50%,.1) 70%,hsla(24,20%,50%,0));pointer-events:none;line-height:inherit;white-space:pre}pre[data-line] .line-highlight:before,pre[data-line] .line-highlight[data-end]:after{content:attr(data-start);position:absolute;top:.4em;left:.6em;min-width:1em;padding:0 .5em;background-color:hsla(24,20%,50%,.4);color:#f4f1ef;font:bold 65%/1.5 sans-serif;text-align:center;vertical-align:.3em;border-radius:999px;text-shadow:none;box-shadow:0 1px #fff}pre[data-line] .line-highlight[data-end]:after{content:attr(data-end);top:auto;bottom:.4em}html body{font-family:'Helvetica Neue',Helvetica,'Segoe UI',Arial,freesans,sans-serif;font-size:16px;line-height:1.6;color:#333;background-color:#fff;overflow:initial;box-sizing:border-box;word-wrap:break-word}html body>:first-child{margin-top:0}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{line-height:1.2;margin-top:1em;margin-bottom:16px;color:#000}html body h1{font-size:2.25em;font-weight:300;padding-bottom:.3em}html body h2{font-size:1.75em;font-weight:400;padding-bottom:.3em}html body h3{font-size:1.5em;font-weight:500}html body h4{font-size:1.25em;font-weight:600}html body h5{font-size:1.1em;font-weight:600}html body h6{font-size:1em;font-weight:600}html body h1,html body h2,html body h3,html body h4,html body h5{font-weight:600}html body h5{font-size:1em}html body h6{color:#5c5c5c}html body strong{color:#000}html body del{color:#5c5c5c}html body a:not([href]){color:inherit;text-decoration:none}html body a{color:#08c;text-decoration:none}html body a:hover{color:#00a3f5;text-decoration:none}html body img{max-width:100%}html body>p{margin-top:0;margin-bottom:16px;word-wrap:break-word}html body>ol,html body>ul{margin-bottom:16px}html body ol,html body ul{padding-left:2em}html body ol.no-list,html body ul.no-list{padding:0;list-style-type:none}html body ol ol,html body ol ul,html body ul ol,html body ul ul{margin-top:0;margin-bottom:0}html body li{margin-bottom:0}html body li.task-list-item{list-style:none}html body li>p{margin-top:0;margin-bottom:0}html body .task-list-item-checkbox{margin:0 .2em .25em -1.8em;vertical-align:middle}html body .task-list-item-checkbox:hover{cursor:pointer}html body blockquote{margin:16px 0;font-size:inherit;padding:0 15px;color:#5c5c5c;background-color:#f0f0f0;border-left:4px solid #d6d6d6}html body blockquote>:first-child{margin-top:0}html body blockquote>:last-child{margin-bottom:0}html body hr{height:4px;margin:32px 0;background-color:#d6d6d6;border:0 none}html body table{margin:10px 0 15px 0;border-collapse:collapse;border-spacing:0;display:block;width:100%;overflow:auto;word-break:normal;word-break:keep-all}html body table th{font-weight:700;color:#000}html body table td,html body table th{border:1px solid #d6d6d6;padding:6px 13px}html body dl{padding:0}html body dl dt{padding:0;margin-top:16px;font-size:1em;font-style:italic;font-weight:700}html body dl dd{padding:0 16px;margin-bottom:16px}html body code{font-family:Menlo,Monaco,Consolas,'Courier New',monospace;font-size:.85em;color:#000;background-color:#f0f0f0;border-radius:3px;padding:.2em 0}html body code::after,html body code::before{letter-spacing:-.2em;content:'\00a0'}html body pre>code{padding:0;margin:0;word-break:normal;white-space:pre;background:0 0;border:0}html body .highlight{margin-bottom:16px}html body .highlight pre,html body pre{padding:1em;overflow:auto;line-height:1.45;border:#d6d6d6;border-radius:3px}html body .highlight pre{margin-bottom:0;word-break:normal}html body pre code,html body pre tt{display:inline;max-width:initial;padding:0;margin:0;overflow:initial;line-height:inherit;word-wrap:normal;background-color:transparent;border:0}html body pre code:after,html body pre code:before,html body pre tt:after,html body pre tt:before{content:normal}html body blockquote,html body dl,html body ol,html body p,html body pre,html body ul{margin-top:0;margin-bottom:16px}html body kbd{color:#000;border:1px solid #d6d6d6;border-bottom:2px solid #c7c7c7;padding:2px 4px;background-color:#f0f0f0;border-radius:3px}@media print{html body{background-color:#fff}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{color:#000;page-break-after:avoid}html body blockquote{color:#5c5c5c}html body pre{page-break-inside:avoid}html body table{display:table}html body img{display:block;max-width:100%;max-height:100%}html body code,html body pre{word-wrap:break-word;white-space:pre}}.markdown-preview{width:100%;height:100%;box-sizing:border-box}.markdown-preview ul{list-style:disc}.markdown-preview ul ul{list-style:circle}.markdown-preview ul ul ul{list-style:square}.markdown-preview ol{list-style:decimal}.markdown-preview ol ol,.markdown-preview ul ol{list-style-type:lower-roman}.markdown-preview ol ol ol,.markdown-preview ol ul ol,.markdown-preview ul ol ol,.markdown-preview ul ul ol{list-style-type:lower-alpha}.markdown-preview .newpage,.markdown-preview .pagebreak{page-break-before:always}.markdown-preview pre.line-numbers{position:relative;padding-left:3.8em;counter-reset:linenumber}.markdown-preview pre.line-numbers>code{position:relative}.markdown-preview pre.line-numbers .line-numbers-rows{position:absolute;pointer-events:none;top:1em;font-size:100%;left:0;width:3em;letter-spacing:-1px;border-right:1px solid #999;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.markdown-preview pre.line-numbers .line-numbers-rows>span{pointer-events:none;display:block;counter-increment:linenumber}.markdown-preview pre.line-numbers .line-numbers-rows>span:before{content:counter(linenumber);color:#999;display:block;padding-right:.8em;text-align:right}.markdown-preview .mathjax-exps .MathJax_Display{text-align:center!important}.markdown-preview:not([data-for=preview]) .code-chunk .code-chunk-btn-group{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .status{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .output-div{margin-bottom:16px}.markdown-preview .md-toc{padding:0}.markdown-preview .md-toc .md-toc-details{margin:0;padding:0;border:none}.markdown-preview .md-toc summary.md-toc-link-wrapper{cursor:pointer;list-style-position:outside}.markdown-preview .md-toc summary.md-toc-link-wrapper::marker{font-size:.85em}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link div,.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}.markdown-preview .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='0']{margin-left:12px}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='1']{margin-left:28px}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='2']{margin-left:44px}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='3']{margin-left:60px}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='4']{margin-left:76px}.markdown-preview .md-toc .md-toc-link-wrapper[data-level='5']{margin-left:80px}.markdown-preview a.tag,.markdown-preview a.tag:active,.markdown-preview a.tag:link,.markdown-preview a.tag:visited,.markdown-preview span.tag:not(.token){display:inline-block;background-color:var(--vscode-badge-background,rgba(127,127,127,.18));color:var(--vscode-badge-foreground,currentColor);border-radius:2em;font-size:.85em;font-weight:500;padding:.05em .55em;line-height:1.5;white-space:nowrap;text-decoration:none;text-shadow:none;box-shadow:none;transition:background-color .12s ease,opacity .12s ease}.markdown-preview a.tag{cursor:pointer}.markdown-preview a.tag:focus,.markdown-preview a.tag:hover{background-color:var(--vscode-badge-background,rgba(127,127,127,.32));color:var(--vscode-badge-foreground,currentColor);opacity:.85;text-decoration:none;outline:0}.markdown-preview .wikilink-embed-content{border-left:3px solid var(--vscode-textBlockQuote-border,rgba(128,128,128,.3));background:var(--vscode-textBlockQuote-background,rgba(128,128,128,.05));margin:.5em 0;padding:.5em .75em;border-radius:0 3px 3px 0}.markdown-preview .wikilink-embed-content.wikilink-embed-error{border-left-color:var(--vscode-errorForeground,#cf222e);color:var(--vscode-errorForeground,#cf222e);font-style:italic;opacity:.8}.markdown-preview .wikilink-embed-content h1:first-child,.markdown-preview .wikilink-embed-content h2:first-child,.markdown-preview .wikilink-embed-content h3:first-child,.markdown-preview .wikilink-embed-content h4:first-child,.markdown-preview .wikilink-embed-content h5:first-child,.markdown-preview .wikilink-embed-content h6:first-child{margin-top:.25em}.markdown-preview .wikilink-embed-content .wikilink-embed-content{margin:.25em 0;padding:.25em .5em}.markdown-preview .block-id{display:none}.scrollbar-style::-webkit-scrollbar{width:8px}.scrollbar-style::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}.scrollbar-style::-webkit-scrollbar-thumb{border-radius:5px;background-color:var(--vscode-scrollbarSlider-background,rgba(150,150,150,.66));border:4px solid var(--vscode-scrollbarSlider-background,rgba(150,150,150,.66));background-clip:content-box}.scrollbar-style::-webkit-scrollbar-thumb:hover{background-color:var(--vscode-scrollbarSlider-hoverBackground,rgba(120,120,120,.66))}html body[for=html-export]:not([data-presentation-mode]){position:relative;width:100%;height:100%;top:0;left:0;margin:0;padding:0;overflow:auto}html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{position:relative;top:0;min-height:100vh}@media screen and (min-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em calc(50% - 457px + 2em)}}@media screen and (max-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{font-size:14px!important;padding:1em}}@media print{html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{display:none}}html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{position:fixed;bottom:8px;left:8px;font-size:28px;cursor:pointer;color:inherit;z-index:99;width:32px;text-align:center;opacity:.4}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] #sidebar-toc-btn{opacity:1}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc{position:fixed;top:0;left:0;width:300px;height:100%;padding:32px 0 48px 0;font-size:14px;box-shadow:0 0 4px rgba(150,150,150,.33);box-sizing:border-box;overflow:auto;background-color:inherit}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar{width:8px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-thumb{border-radius:5px;background-color:var(--vscode-scrollbarSlider-background,rgba(150,150,150,.66));border:4px solid var(--vscode-scrollbarSlider-background,rgba(150,150,150,.66));background-clip:content-box}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-thumb:hover{background-color:var(--vscode-scrollbarSlider-hoverBackground,rgba(120,120,120,.66))}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc a{text-decoration:none}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc{padding:0 16px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-details{margin:0;padding:0;border:none}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link div,html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='0']{padding-left:0}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='1']{padding-left:16px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='2']{padding-left:32px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='3']{padding-left:48px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='4']{padding-left:64px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper[data-level='5']{padding-left:80px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{left:300px;width:calc(100% - 300px);padding:2em calc(50% - 457px - 300px / 2);margin:0;box-sizing:border-box}@media screen and (max-width:1274px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{width:100%}}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .markdown-preview{left:50%;transform:translateX(-50%)}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .md-sidebar-toc{display:none}
+/* Please visit the URL below for more information: */
+/*   https://shd101wyy.github.io/markdown-preview-enhanced/#/customize-css */
+
+      </style>
+      <!-- The content below will be included at the end of the <head> element. -->
+<script type="text/javascript">
+  document.addEventListener("DOMContentLoaded", function () {
+    // your code here
+  });
+</script>
+    </head>
+    <body for="html-export">
+      <div class="crossnote markdown-preview  ">
+      
+<h1 id="multica-运行架构总览">Multica 运行架构总览 </h1>
+<blockquote>
+<p>本文档用 Mermaid 图描述 Multica 的整体运行架构，重点放在<strong>与服务器各端的交互</strong>和 <strong>Agent Runtime 的调用细节</strong>。配置项、部署细节一律略过。</p>
+<p>受众：想快速理解"前端怎么到后端、task 怎么派到 daemon、agent 怎么真正跑起来"的工程师/新同事。</p>
+<p>图中代码引用均指向真实文件，可点击跳转。</p>
+</blockquote>
+<hr>
+<h2 id="目录">目录 </h2>
+<ol>
+<li><a href="#1-%E6%95%B4%E4%BD%93%E8%BF%90%E8%A1%8C%E6%9E%B6%E6%9E%84%E4%B8%BB%E5%9B%BE">整体运行架构（主图）</a></li>
+<li><a href="#2-%E4%B8%A4%E8%B7%AF-websocket-%E5%88%86%E5%B7%A5">两路 WebSocket 分工</a></li>
+<li><a href="#3-realtime-%E5%A4%9A%E5%AE%9E%E4%BE%8B-redis-relay">Realtime 多实例 Redis Relay</a></li>
+<li><a href="#4-agent-runtime-%E5%8D%95%E6%AC%A1%E4%BB%BB%E5%8A%A1%E8%B0%83%E7%94%A8%E6%97%B6%E5%BA%8F">Agent Runtime 单次任务调用时序</a></li>
+<li><a href="#5-daemon-%E4%B8%BB%E5%BE%AA%E7%8E%AF%E5%AD%90%E9%98%B6%E6%AE%B5">Daemon 主循环子阶段</a></li>
+<li><a href="#6-agent-backend-%E7%BB%9F%E4%B8%80%E6%8A%BD%E8%B1%A1">Agent Backend 统一抽象</a></li>
+<li><a href="#7-cloud-runtime-%E5%BC%80%E9%80%9A%E4%B8%8E%E5%9B%9E%E8%BF%9E">Cloud Runtime 开通与回连</a></li>
+<li><a href="#8-%E5%85%B3%E9%94%AE%E4%BA%A4%E4%BA%92%E7%82%B9%E9%80%9F%E6%9F%A5">关键交互点速查</a></li>
+</ol>
+<hr>
+<h2 id="1-整体运行架构主图">1. 整体运行架构（主图） </h2>
+<div class="mermaid">flowchart TB
+  subgraph Clients["客户端"]
+    Web["apps/web&lt;br/&gt;Next.js App Router"]
+    Desk["apps/desktop&lt;br/&gt;Electron"]
+    Mob["apps/mobile&lt;br/&gt;Expo / React Native"]
+    CLI["multica CLI&lt;br/&gt;本机 daemon 宿主"]
+  end
+
+  subgraph Server["Go Server (Chi)"]
+    direction TB
+    HTTP["HTTP REST API&lt;br/&gt;/api/issues·agents·tasks·skills·runtimes·integrations·billing"]
+    Trig["issueTrigger + TaskService&lt;br/&gt;assignee 变更 → enqueue task"]
+    Sched["Scheduler&lt;br/&gt;pg-cron: autopilot·task-usage"]
+    Bus["events.Bus&lt;br/&gt;内部事件总线"]
+    RTHub["Realtime WS /ws&lt;br/&gt;realtime.Hub → 浏览器订阅"]
+    DHub["Daemon WS /api/daemon/ws&lt;br/&gt;daemonws.Hub → 按 runtime 投递"]
+    CProxy["Cloud Runtime Proxy&lt;br/&gt;/api/cloud-runtime/*"]
+    DB[("PostgreSQL + pgvector")]
+    Redis[("Redis&lt;br/&gt;sharded stream relay")]
+  end
+
+  subgraph LocalRT["本地 Agent Runtime — multica daemon"]
+    direction TB
+    Loop["Daemon.Run 主循环&lt;br/&gt;register·heartbeat·wakeup·token续期"]
+    Claim["ClaimTask&lt;br/&gt;POST /tasks/claim"]
+    RunTask["runTask&lt;br/&gt;组装 prompt / env / skills / repo / local-dir"]
+    Exec["agent.Backend.Execute&lt;br/&gt;Backend.Execute(ctx, prompt, opts)"]
+    Watch["idle watchdog&lt;br/&gt;+ GC / 孤儿回收"]
+    Report["回报 progress·messages&lt;br/&gt;complete·fail·usage·session"]
+  end
+
+  subgraph CloudRT["Cloud Runtime Fleet (multica-cloud)"]
+    Fleet["Fleet API&lt;br/&gt;/api/v1/nodes&lt;br/&gt;provision·start·stop·delete"]
+    Node["云端 node (EC2)&lt;br/&gt;node-scoped mcn_ PAT&lt;br/&gt;内嵌 daemon"]
+  end
+
+  subgraph CLIs["AI Coding CLI（子进程）"]
+    Claude["claude"]
+    Codex["codex"]
+    Copilot["copilot"]
+    Cursor["cursor"]
+    Others["dimcli·hermes·kimi·kiro&lt;br/&gt;openclaw·opencode·pi·qoder·traecli&lt;br/&gt;codebuddy·antigravity"]
+  end
+
+  %% 客户端 → server
+  Web --&gt;|"HTTPS REST"| HTTP
+  Web --&gt;|"WS /ws 订阅 task/chat scope"| RTHub
+  Desk --&gt;|"HTTPS REST"| HTTP
+  Desk --&gt;|"WS /ws"| RTHub
+  Mob --&gt;|"HTTPS REST"| HTTP
+  CLI --&gt;|"OAuth/PAT 鉴权"| HTTP
+  CLI -.-&gt;|"启动/管理"| Loop
+
+  %% server 内部
+  HTTP &lt;--&gt; DB
+  HTTP &lt;--&gt; Bus
+  Sched &lt;--&gt; DB
+  RTHub &lt;--&gt; Bus
+  RTHub --&gt;|"relay"| Redis
+  DHub --&gt;|"relay"| Redis
+
+  %% 派发链
+  HTTP --&gt;|"assign agent → trigger"| Trig
+  Trig --&gt;|"EnqueueTaskForIssue&lt;br/&gt;写 task(runtime_id)"| Bus
+  Bus --&gt;|"NotifyTaskAvailable"| DHub
+  Bus --&gt;|"task 事件 patch/invalidate"| RTHub
+
+  %% daemon ↔ server
+  Loop --&gt;|"POST /daemon/register"| HTTP
+  Loop -.-&gt;|"WS 心跳 / 唤醒"| DHub
+  Loop --&gt;|"POST /daemon/heartbeat (fallback)"| HTTP
+  Claim --&gt;|"claim HTTP"| HTTP
+  Report --&gt;|"progress/complete/fail/usage"| HTTP
+  HTTP --&gt; Bus
+
+  %% daemon 内部
+  Loop --&gt; Claim --&gt; RunTask --&gt; Exec
+  Exec --&gt;|"stdout / 事件流"| Watch
+  Exec --&gt;|"spawn + --mcp-config"| Claude
+  Exec --&gt;|"spawn"| Codex
+  Exec --&gt;|"spawn"| Copilot
+  Exec --&gt;|"spawn"| Cursor
+  Exec --&gt;|"spawn"| Others
+  RunTask --&gt; Report
+
+  %% cloud runtime
+  HTTP -.-&gt;|"用户开通云端 node"| CProxy
+  CProxy --&gt;|"转发"| Fleet
+  Fleet --&gt;|"起 node"| Node
+  Node --&gt;|"同 daemon 协议回连&lt;br/&gt;register/claim/heartbeat/task"| HTTP
+  Node -.-&gt;|"WS"| DHub
+  Node --&gt;|"spawn"| CLIs
+</div><p>要点：</p>
+<ul>
+<li><strong>两种 Agent Runtime 形态</strong>对 server 协议透明：本机 <code>multica daemon</code> 与云端 node 都走同一套 register / claim / heartbeat / task，差别只在本机还是 EC2。</li>
+<li><strong>正确性靠 HTTP claim</strong>，不靠 WS。WS 唤醒只是"可能有活"的提示，真正抢占是 <code>POST /tasks/claim</code>，保证多 daemon / 多 server 实例下任务不重复执行。</li>
+<li><strong><code>events.Bus</code> 是中枢</strong>：task 终态、progress、评论变更都进 Bus，再分发给 daemon WS 投递和 realtime 浏览器广播。</li>
+</ul>
+<hr>
+<h2 id="2-两路-websocket-分工">2. 两路 WebSocket 分工 </h2>
+<p>Multica 有两条独立的 WebSocket 通道，职责完全不重叠：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>浏览器侧 <code>/ws</code></th>
+<th>Daemon 侧 <code>/api/daemon/ws</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>实现</td>
+<td><a href="../server/internal/realtime/hub.go"><code>realtime.Hub</code></a></td>
+<td><a href="../server/internal/daemonws/hub.go"><code>daemonws.Hub</code></a></td>
+</tr>
+<tr>
+<td>连接方</td>
+<td>Web / Desktop</td>
+<td>本机 daemon / 云端 node daemon</td>
+</tr>
+<tr>
+<td>鉴权</td>
+<td>用户会话 cookie / PAT</td>
+<td>daemon PAT + runtime IDs</td>
+</tr>
+<tr>
+<td>索引维度</td>
+<td>user × workspace × scope(task/chat)</td>
+<td>runtime ID × workspace</td>
+</tr>
+<tr>
+<td>主要帧</td>
+<td>task 进度、issue/评论变更、chat 消息</td>
+<td><code>daemon:task_available</code>、<code>daemon:runtime_profiles_changed</code>、心跳</td>
+</tr>
+<tr>
+<td>投递方向</td>
+<td>server → 浏览器（订阅广播）</td>
+<td>server → daemon（唤醒提示）</td>
+</tr>
+</tbody>
+</table>
+<div class="mermaid">flowchart LR
+  subgraph Browser["浏览器"]
+    BTab["Web/Desktop tab"]
+  end
+  subgraph Daemon["本机 daemon"]
+    DProc["Daemon.Run"]
+  end
+  subgraph Server["Server"]
+    direction TB
+    RTHub["realtime.Hub&lt;br/&gt;/ws"]
+    DHub["daemonws.Hub&lt;br/&gt;/api/daemon/ws"]
+    Bus["events.Bus"]
+    HTTP["HTTP REST + Claim"]
+  end
+
+  BTab --&gt;|"WS /ws 订阅 scope"| RTHub
+  RTHub --&gt;|"广播 task/issue/chat"| BTab
+  DProc --&gt;|"WS 心跳 + runtime 注册"| DHub
+  DProc --&gt;|"HTTP claim/progress/complete"| HTTP
+  DHub --&gt;|"daemon:task_available 唤醒"| DProc
+  Bus --&gt; RTHub
+  Bus --&gt; DHub
+  HTTP --&gt; Bus
+</div><p>核心约束：daemon WS 下发的是<strong>唤醒提示</strong>，daemon 收到后仍要打 HTTP <code>claim</code> 才拿得到任务；这样即使 WS 丢帧、多 daemon 抢同一任务，最终只有一个能 claim 成功。</p>
+<hr>
+<h2 id="3-realtime-多实例-redis-relay">3. Realtime 多实例 Redis Relay </h2>
+<p>单机部署时 realtime 直接进程内广播；多实例部署时引入 Redis Stream 分片 relay，保证任一 server 实例发出的帧所有实例的订阅者都能收到。</p>
+<div class="mermaid">flowchart TB
+  subgraph Pods["Server 实例 ×N"]
+    P1["Pod A&lt;br/&gt;realtime.Hub"]
+    P2["Pod B&lt;br/&gt;realtime.Hub"]
+    P3["Pod C&lt;br/&gt;realtime.Hub"]
+  end
+
+  subgraph Redis["Redis"]
+    direction LR
+    S0["shard 0&lt;br/&gt;ws:relay:shard:0"]
+    S1["shard 1&lt;br/&gt;ws:relay:shard:1"]
+    S2["...&lt;br/&gt;shard N"]
+    S7["shard 7&lt;br/&gt;ws:relay:shard:7"]
+  end
+
+  Clients["浏览器订阅者&lt;br/&gt;散布在各 Pod"]
+
+  P1 --&gt;|"XADD (按 hash 选 shard)"| S0
+  P1 --&gt;|"XADD"| S3["shard 3"]
+  P2 --&gt;|"XADD"| S1
+  P3 --&gt;|"XADD"| S7
+  P1 --&gt;|"XREADGROUP 阻塞读&lt;br/&gt;所有 shard, RecallGrace 回看"| S0
+  P1 --&gt; S1
+  P2 --&gt; S0
+  P2 --&gt; S7
+  P3 --&gt; S1
+  P3 --&gt; S3
+  P1 --&gt;|"本地 Hub 广播"| Clients
+  P2 --&gt;|"本地 Hub 广播"| Clients
+  P3 --&gt;|"本地 Hub 广播"| Clients
+</div><p>机制要点（见 <a href="../server/internal/realtime/sharded_stream_relay.go"><code>sharded_stream_relay.go</code></a> / <a href="../server/internal/realtime/redis_relay.go"><code>redis_relay.go</code></a>）：</p>
+<ul>
+<li>固定 8 个 shard，key <code>ws:relay:shard:N</code>；发布按 <code>hash(scopeID) % shards</code> 选 shard。</li>
+<li>每个 Pod 起<strong>所有 shard 的阻塞 reader</strong> —— 任意 Pod 发的帧，所有 Pod 都能读到并广播给本地订阅者。</li>
+<li>reader 启动从 <code>(now - ReplayGrace)</code> 回看，保证 Pod 重启期间漏掉的帧能补播；stream 有 <code>MAXLEN</code> 上界，下游消费必须幂等。</li>
+<li>本地 Hub 端有 event-id 去重，同一帧不会被重复推给同一订阅者。</li>
+</ul>
+<hr>
+<h2 id="4-agent-runtime-单次任务调用时序">4. Agent Runtime 单次任务调用时序 </h2>
+<p>这是"用户给 issue 指派 agent → agent 真的跑起来 → 结果回到前端"的完整时序，最值得反复对照。</p>
+<div class="mermaid">sequenceDiagram
+  autonumber
+  participant U as 用户 Web/Desktop
+  participant S as Server HTTP API
+  participant T as issueTrigger + TaskService
+  participant E as events.Bus
+  participant DW as daemonws.Hub
+  participant RT as Realtime /ws → 浏览器
+  participant D as 本机 Daemon
+  participant B as agent.Backend
+  participant CLI as AI CLI 子进程
+
+  U-&gt;&gt;S: 改 issue: assignee=agent, status=启动
+  S-&gt;&gt;T: issueTrigger.dispatchIssueRun
+  T-&gt;&gt;T: EnqueueTaskForIssue (写 task, 绑定 runtime_id)
+  T-&gt;&gt;E: task.assigned
+  E-&gt;&gt;DW: NotifyTaskAvailable(runtimeID, taskID)
+  DW-&gt;&gt;D: daemon:task_available (WS 唤醒)
+
+  D-&gt;&gt;S: POST /api/daemon/runtimes/{rid}/tasks/claim
+  S--&gt;&gt;D: 200 Task{prompt, repo, skills, model, mcp, local_dir}
+  D-&gt;&gt;S: POST /tasks/{id}/prepare-lease (抢占期续租)
+  D-&gt;&gt;S: POST /tasks/{id}/start (标记 running)
+  D-&gt;&gt;D: runTask: 解析 repo 克隆 / skills bundle / local-dir / env
+  D-&gt;&gt;B: Backend.Execute(ctx, prompt, ExecOptions)
+  B-&gt;&gt;CLI: spawn claude/codex/copilot/cursor/... --mcp-config ...
+
+  loop 流式产出（并行心跳）
+    CLI--&gt;&gt;B: text / thinking / tool-use / tool-result 事件
+    B--&gt;&gt;D: Message 流（channel）
+    D-&gt;&gt;S: POST /tasks/{id}/progress {step,total}
+    D-&gt;&gt;S: POST /tasks/{id}/messages
+    S-&gt;&gt;E: task.progress / task.message
+    E-&gt;&gt;RT: 广播到 workspace scope 订阅者
+    RT--&gt;&gt;U: WS 推送 → React Query patch 缓存
+  end
+
+  D-&gt;&gt;D: idle watchdog: 语义停活跃度判定，kill 长静默
+
+  alt 正常完成
+    D-&gt;&gt;S: POST /tasks/{id}/complete {output, branch, session, workdir}
+    D-&gt;&gt;S: POST /tasks/{id}/usage {per-model tokens}
+    D-&gt;&gt;S: POST /tasks/{id}/session (pin resume 指针)
+  else 失败/超时/取消
+    D-&gt;&gt;S: POST /tasks/{id}/fail {err, failureReason}
+  end
+  S-&gt;&gt;E: task.terminal
+  E-&gt;&gt;RT: 广播 issue 状态/评论变更
+  RT--&gt;&gt;U: WS 推送 → 前端 invalidate/patch
+</div><p>关键点：</p>
+<ul>
+<li><strong>唤醒 → claim 是两步</strong>：WS 唤醒只让 daemon 去轮询，<code>claim</code> 才原子地把 task 标给这个 runtime。</li>
+<li><strong>prepare-lease</strong> 是 claim 之后、start 之前的抢占保护期，runTask 启动慢（克隆 repo、装 skills）时靠它续命，防止被另一个 daemon 抢走。</li>
+<li><strong>流式事件双向出</strong>：CLI 的每条事件既走 daemon 回报（<code>progress</code>/<code>messages</code>）进 <code>events.Bus</code>，又由 realtime <code>/ws</code> 推给浏览器，所以前端能看到 agent 在干啥。</li>
+<li><strong>resume 指针</strong>：<code>POST /tasks/{id}/session</code> 在完成时 pin 住 session，下次同 issue 再触发可 <code>resumeSessionID</code> 续跑。</li>
+</ul>
+<hr>
+<h2 id="5-daemon-主循环子阶段">5. Daemon 主循环子阶段 </h2>
+<p><code>multica daemon start</code> 后 <a href="../server/internal/daemon/daemon.go#L724"><code>Daemon.Run</code></a> 是一个长生命周期循环，由若干子循环并发构成。</p>
+<div class="mermaid">flowchart TB
+  Start([multica daemon start]) --&gt; Preflight["preflightAuth&lt;br/&gt;续期 PAT + 首次 workspace 同步"]
+  Preflight --&gt; Register["registerRuntimesForWorkspace&lt;br/&gt;POST /daemon/register (每 ws)"]
+  Register --&gt; Ready([d.ready = true])
+
+  Ready --&gt; LoopA["workspaceSyncLoop&lt;br/&gt;周期拉 /api/workspaces, 新 ws 触发 register"]
+  Ready --&gt; LoopB["heartbeatLoop&lt;br/&gt;WS 心跳 + HTTP fallback, 续租 runtime 在线"]
+  Ready --&gt; LoopC["tokenRenewalLoop&lt;br/&gt;PAT 到期前续期"]
+  Ready --&gt; LoopD["wakeup / reconcile&lt;br/&gt;runTaskWakeupConnection 监听 WS 唤醒"]
+  Ready --&gt; LoopE["taskRunner 池&lt;br/&gt;MaxConcurrentTasks 个 slot"]
+  Ready --&gt; LoopF["GC / 孤儿回收&lt;br/&gt;recover-orphans, workdir 清理"]
+  Ready --&gt; LoopG["auto_update / model-list 报告"]
+
+  LoopD --&gt;|"task_available"| LoopE
+  LoopE --&gt; runTask["runTask&lt;br/&gt;claim → prepare-lease → start → Execute → report"]
+
+  subgraph Fallback["WS 不可用时的降级"]
+    LoopB -.-&gt;|"心跳无 ack"| HBhttp["HTTP POST /daemon/heartbeat"]
+    LoopD -.-&gt;|"WS 断线"| Poll["定时 POST /tasks/pending 轮询"]
+  end
+</div><p>设计取舍：</p>
+<ul>
+<li><strong>WS 优先、HTTP 兜底</strong>：心跳和任务唤醒都优先走 WS，丢 ack 才回退 HTTP，降低 server 负载又不丢正确性。</li>
+<li><strong>task slot 池</strong>：<code>MaxConcurrentTasks</code> 控制并发，每个 slot 独立跑一次 <code>runTask</code>；claim 失败（被抢/无任务）就回睡眠等下一轮唤醒。</li>
+<li><strong>孤儿回收</strong>：daemon 重启或崩溃前正在跑的 task，靠 <code>recover-orphans</code> 把它们标记回 pending，避免永久卡死。</li>
+</ul>
+<hr>
+<h2 id="6-agent-backend-统一抽象">6. Agent Backend 统一抽象 </h2>
+<p><a href="../server/pkg/agent/agent.go"><code>server/pkg/agent</code></a> 把 16 种编码 CLI 收敛成一个 <code>Backend</code> 接口，<code>runTask</code> 只对接这个接口 —— 加新 CLI 不动调度链。</p>
+<div class="mermaid">classDiagram
+  class Backend {
+    &lt;&lt;interface&gt;&gt;
+    +Execute(ctx, prompt, opts ExecOptions) Session
+  }
+  class ExecOptions {
+    +Cwd string
+    +Model string
+    +SystemPrompt string
+    +ThreadName string
+    +MaxTurns int
+    +Timeout Duration
+    +SemanticInactivityTimeout Duration
+    +ResumeSessionID string
+    +ExtraArgs []string
+    +CustomArgs []string
+    +McpConfig json.RawMessage
+    +ThinkingLevel string
+    +OpenclawMode string
+  }
+  class Session {
+    +Messages ~chan~Message
+    +Result ~chan~Result
+  }
+  class Message {
+    +Type MessageType
+    +Content string
+    +Tool string
+    +CallID string
+    +Input map
+    +Output string
+    +Status string
+    +SessionID string
+  }
+  class Result {
+    +Status string
+    +Output string
+    +Error string
+    +DurationMs int64
+    +SessionID string
+    +Usage map~string,TokenUsage~
+  }
+
+  Backend &lt;|.. Claude
+  Backend &lt;|.. Codex
+  Backend &lt;|.. Copilot
+  Backend &lt;|.. Cursor
+  Backend &lt;|.. Hermes
+  Backend &lt;|.. Dimcli
+  Backend &lt;|.. Openclaw
+  Backend &lt;|.. Opencode
+  Backend &lt;|.. Others["Kimi·Kiro·Pi·Qoder·Traecli·Codebuddy·Antigravity"]
+
+  Backend ..&gt; ExecOptions
+  Backend ..&gt; Session
+  Session ..&gt; Message
+  Session ..&gt; Result
+</div><ul>
+<li><code>agent.New(type)</code> 按 <code>SupportedTypes</code> 白名单选具体后端；白名单与 DB <code>runtime_profile.protocol_family</code> CHECK 约束同源。</li>
+<li>自定义 runtime profile 只覆盖 <code>ExecutablePath + CustomArgs</code>，protocol_family 仍决定走哪个 backend 的参数注入逻辑。</li>
+<li>所有后端的输出都归一成 <code>Message</code> 事件流 + <code>Result</code> 终态，daemon 侧的进度回报 / usage 统计因此与具体 CLI 解耦。</li>
+</ul>
+<hr>
+<h2 id="7-cloud-runtime-开通与回连">7. Cloud Runtime 开通与回连 </h2>
+<p>云端 node 不是另一套协议：server 只代理 fleet 管理 node 生命周期，node 起来后自带 daemon 用 node-scoped <code>mcn_</code> PAT 回连，对 server 完全透明。</p>
+<div class="mermaid">sequenceDiagram
+  autonumber
+  participant U as 用户
+  participant S as Server /api/cloud-runtime/*
+  participant F as Fleet API (multica-cloud)
+  participant EC2 as 云端 node / EC2
+  participant S2 as Server (同上, 回连侧)
+  participant DW as daemonws.Hub
+
+  U-&gt;&gt;S: POST /cloud-runtime/nodes (开通)
+  S-&gt;&gt;F: POST /api/v1/nodes (转发, 带 X-User-ID)
+  F-&gt;&gt;F: 签发 node-scoped mcn_ PAT
+  F-&gt;&gt;EC2: SSM bootstrap 注入 mcn_ PAT + daemon
+  F--&gt;&gt;S: node 元信息
+  S--&gt;&gt;U: node 列表 / 状态
+
+  U-&gt;&gt;S: POST /cloud-runtime/nodes/start
+  S-&gt;&gt;F: POST /api/v1/nodes/start
+  F-&gt;&gt;EC2: 启动实例
+
+  EC2-&gt;&gt;S2: POST /api/daemon/register (mcn_ PAT)
+  EC2-&gt;&gt;S2: WS /api/daemon/ws (注册 runtime)
+  S2-&gt;&gt;DW: 索引到该 node 的 runtime
+
+  Note over EC2,S2: 之后与本地 daemon 完全同构:&lt;br/&gt;claim → runTask → Execute → report
+
+  DW-&gt;&gt;EC2: daemon:task_available 唤醒
+  EC2-&gt;&gt;S2: POST /tasks/claim
+  EC2-&gt;&gt;EC2: spawn AI CLI 子进程
+  EC2-&gt;&gt;S2: progress / complete / usage
+</div><p>安全取舍（见 <a href="../server/internal/handler/cloud_runtime.go"><code>cloud_runtime.go</code></a> / <a href="../server/internal/cloudruntime/client.go"><code>cloudruntime/client.go</code></a>）：</p>
+<ul>
+<li>server <strong>不转发</strong>用户的 <code>mul_</code> PAT 给 fleet，node 用自己独立的 <code>mcn_</code> PAT 回连，单 node 被攻破不波及用户长期凭证。</li>
+<li>server 对 fleet 的调用全程带 <code>X-User-ID</code> / <code>X-Request-ID</code>，并有 op 维度的请求指标（provision / terminate / status / gateway）。</li>
+<li>node 回连后走<strong>完全相同的 daemon 协议</strong>，所以前文时序图对云端 node 同样成立。</li>
+</ul>
+<hr>
+<h2 id="8-关键交互点速查">8. 关键交互点速查 </h2>
+<table>
+<thead>
+<tr>
+<th>交互</th>
+<th>端点 / 通道</th>
+<th>方向</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>浏览器订阅</td>
+<td><code>WS /ws</code></td>
+<td>server → 浏览器</td>
+<td>task/issue/chat 实时推送</td>
+</tr>
+<tr>
+<td>Daemon 注册</td>
+<td><code>POST /api/daemon/register</code></td>
+<td>daemon → server</td>
+<td>上报 runtime 列表/模型/skills</td>
+</tr>
+<tr>
+<td>Daemon 心跳</td>
+<td><code>POST /api/daemon/heartbeat</code> + <code>WS</code></td>
+<td>daemon ↔ server</td>
+<td>续租在线态, 兜底降级</td>
+</tr>
+<tr>
+<td>任务唤醒</td>
+<td><code>daemon:task_available</code> (WS)</td>
+<td>server → daemon</td>
+<td>"可能有活"的提示</td>
+</tr>
+<tr>
+<td>任务抢占</td>
+<td><code>POST .../tasks/claim</code></td>
+<td>daemon → server</td>
+<td>原子认领, 唯一执行者</td>
+</tr>
+<tr>
+<td>进度回报</td>
+<td><code>POST .../tasks/progress</code> <code>/messages</code></td>
+<td>daemon → server</td>
+<td>流式状态回到 events.Bus</td>
+</tr>
+<tr>
+<td>终态回报</td>
+<td><code>POST .../tasks/complete</code> <code>/fail</code> <code>/usage</code></td>
+<td>daemon → server</td>
+<td>结束 + token 统计</td>
+</tr>
+<tr>
+<td>Cloud 开通</td>
+<td><code>POST /api/cloud-runtime/nodes</code></td>
+<td>server → fleet</td>
+<td>起 EC2 node</td>
+</tr>
+<tr>
+<td>Cloud 回连</td>
+<td><code>POST /api/daemon/register</code> (mcn_ PAT)</td>
+<td>node → server</td>
+<td>回连成普通 daemon</td>
+</tr>
+</tbody>
+</table>
+<p>一句话总结架构：<strong>前端走 REST + <code>/ws</code> 看结果，daemon 走 REST + <code>/api/daemon/ws</code> 干活，两者由 <code>events.Bus</code> + Redis relay 串起来；agent 真正执行是 daemon 用统一 <code>Backend</code> 接口 spawn 本机 / 云端 CLI 子进程，云端 node 只是把同一套 daemon 协议搬到了 EC2。</strong></p>
+
+      </div>
+      
+      
+    
+    
+    <script type="module">
+// TODO: If ZenUML gets integrated into mermaid in the future,
+//      we can remove the following lines.
+
+
+var MERMAID_CONFIG = ({"startOnLoad":false});
+if (typeof MERMAID_CONFIG !== 'undefined') {
+  MERMAID_CONFIG.startOnLoad = false
+  MERMAID_CONFIG.cloneCssStyles = false
+  MERMAID_CONFIG.theme = "default"
+}
+
+mermaid.initialize(MERMAID_CONFIG || {})
+if (typeof(window['Reveal']) !== 'undefined') {
+  function mermaidRevealHelper(event) {
+    var currentSlide = event.currentSlide
+    var diagrams = currentSlide.querySelectorAll('div.mermaid')
+    for (var i = 0; i < diagrams.length; i++) {
+      var diagram = diagrams[i]
+      if (!diagram.hasAttribute('data-processed')) {
+        mermaid.init(null, diagram, ()=> {
+          Reveal.slide(event.indexh, event.indexv)
+        })
+      }
+    }
+  }
+  Reveal.addEventListener('slidetransitionend', mermaidRevealHelper)
+  Reveal.addEventListener('ready', mermaidRevealHelper)
+  await mermaid.run({
+    nodes: document.querySelectorAll('div.mermaid')
+  })
+} else {
+  await mermaid.run({
+    nodes: document.querySelectorAll('div.mermaid')
+  })
+}
+</script>
+    
+    
+    
+  
+    </body></html>
